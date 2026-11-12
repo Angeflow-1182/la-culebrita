@@ -12,8 +12,8 @@
 :root{color-scheme:dark;--lcd:#9bbc0f;--ink:#0f380f;--body:#2b3a67;--body2:#1a2344;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#0c0f1f;font-family:"Trebuchet MS",Verdana,sans-serif;color:#dfe6ff;overscroll-behavior:none}
-body{display:flex;justify-content:center;align-items:center}
-#ph{width:min(94vw,440px);background:linear-gradient(160deg,var(--body),var(--body2));border-radius:34px;padding:16px 16px 18px;box-shadow:0 18px 50px rgba(0,0,0,.7),inset 0 2px 3px rgba(255,255,255,.2)}
+body{display:flex;justify-content:center;overflow-y:auto}
+#ph{touch-action:none;width:min(94vw,440px,calc((100vh - 90px)/1.7));width:min(94vw,440px,calc((100dvh - 90px)/1.7));margin:auto;background:linear-gradient(160deg,var(--body),var(--body2));border-radius:34px;padding:16px 16px 18px;box-shadow:0 18px 50px rgba(0,0,0,.7),inset 0 2px 3px rgba(255,255,255,.2)}
 .brand{text-align:center;letter-spacing:6px;font-size:12px;color:#aab6e8;margin-bottom:8px;font-weight:bold}
 #lcdw{background:#6d8a10;padding:10px;border-radius:14px;box-shadow:inset 0 0 12px rgba(0,0,0,.6)}
 #hud{display:flex;justify-content:space-between;font:bold 15px monospace;color:var(--ink);padding:0 4px 4px}
@@ -21,20 +21,24 @@ canvas{display:block;width:100%;aspect-ratio:1;background:var(--lcd);image-rende
 #ov{position:absolute;inset:0}
 #cv{position:relative}
 #msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font:bold 20px monospace;color:var(--ink);text-align:center;pointer-events:none;white-space:pre-line;text-shadow:0 0 0 var(--ink)}
-#pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px auto 0;width:min(70%,230px)}
+#pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px auto 0;width:min(80%,260px)}
 #pad button{aspect-ratio:1;border:0;border-radius:50%;background:linear-gradient(180deg,#46508a,#2a3265);color:#fff;font-size:24px;box-shadow:0 4px 0 #151a3a;touch-action:manipulation}
 #pad button:active{transform:translateY(3px);box-shadow:0 1px 0 #151a3a}
 #pad .e{visibility:hidden}
-#row{display:flex;gap:8px;margin-top:12px}
-#row button{flex:1;padding:10px 4px;border:0;border-radius:12px;background:rgba(255,255,255,.12);color:#dfe6ff;font:bold 12px "Trebuchet MS",sans-serif;touch-action:manipulation}
+#row{display:flex;gap:6px;margin-top:10px}
+#row button{flex:1;padding:9px 2px;border:0;border-radius:12px;background:rgba(255,255,255,.12);color:#dfe6ff;font:bold 12px "Trebuchet MS",sans-serif;touch-action:manipulation}
+.brand{position:relative}
+#bM{position:absolute;right:0;top:-8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:#dfe6ff;font-size:18px;letter-spacing:0;touch-action:manipulation}
+#row{position:absolute;left:0;right:0;bottom:0;margin:0;display:none;flex-direction:column;gap:8px;padding:12px;background:rgba(15,56,15,.94)}
+#row.open{display:flex}
+#row button{padding:12px 6px;border-radius:8px;background:var(--lcd);color:var(--ink);font:bold 14px monospace;letter-spacing:1px}
 </style></head><body>
 <div id="ph">
-<div class="brand">LA&nbsp;CULEBRITA</div>
+<div class="brand">LA&nbsp;CULEBRITA<button id="bM" aria-label="Menú">☰</button></div>
 <div id="lcdw"><div id="hud"><span>PTS <b id="sc">0</b></span><span>NIVEL <b id="lv">1</b></span><span>REC <b id="hi">0</b></span></div>
 <div id="cv"><canvas id="c" width="360" height="360"></canvas><div id="msg">LA CULEBRITA
-Toca para jugar</div></div></div>
-<div id="pad"><span class="e"></span><button data-d="U">▲</button><span class="e"></span><button data-d="L">◀</button><button data-d="D">▼</button><button data-d="R">▶</button></div>
-<div id="row"><button id="bP">PAUSA</button><button id="bW">PAREDES: MORTALES</button><button id="bS">SONIDO: ON</button></div>
+Toca para jugar</div><div id="row"><button id="bP">PAUSA</button><button id="bW">PAREDES: MORTALES</button><button id="bS">SONIDO: ON</button></div></div></div>
+<div id="pad"><span class="e"></span><button data-d="U">▲</button><span class="e"></span><button data-d="L">◀</button><span class="e"></span><button data-d="R">▶</button><span class="e"></span><button data-d="D">▼</button><span class="e"></span></div>
 </div>
 <script>
 "use strict";
@@ -51,7 +55,7 @@ function newGame(){snake=[[9,9],[8,9],[7,9],[6,9]];dir='R';queue=[];score=0;plac
 function placeFood(){const free=[];for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!snake.some(s=>s[0]===x&&s[1]===y))free.push([x,y]);food=free.length?free[Math.floor(Math.random()*free.length)]:null}
 function level(){return 1+Math.floor(score/5)}
 function delay(){return Math.max(55,160-(level()-1)*12)}
-function turn(d){const last=queue.length?queue[queue.length-1]:dir;const a=DIRS[d],b=DIRS[last];if(a[0]+b[0]===0&&a[1]+b[1]===0)return;if(d===last)return;if(queue.length<2)queue.push(d)}
+function turn(d){const last=queue.length?queue[queue.length-1]:dir;const a=DIRS[d],b=DIRS[last];if(a[0]+b[0]===0&&a[1]+b[1]===0)return;if(d===last)return;if(queue.length<3)queue.push(d)}
 function step(){
  if(queue.length)dir=queue.shift();
  const [dx,dy]=DIRS[dir];let x=snake[0][0]+dx,y=snake[0][1]+dy;
@@ -72,23 +76,24 @@ function draw(){g.fillStyle=LCD;g.fillRect(0,0,360,360);
  if(snake)snake.forEach((s,i)=>{cell(s[0],s[1]);if(i===0){g.fillStyle=LCD;const e=dir==='L'||dir==='R'?[[0,-4],[0,4]]:[[-4,0],[4,0]];e.forEach(o=>g.fillRect(s[0]*CS+9+o[0],s[1]*CS+9+o[1],3,3))}});
  if(food){blink^=1;g.fillStyle=INK;const fx=food[0]*CS,fy=food[1]*CS;g.fillRect(fx+7,fy+2,6,16);g.fillRect(fx+2,fy+7,16,6);if(blink){g.fillStyle=LCD;g.fillRect(fx+9,fy+9,2,2)}}}
 /* ---- control de estados ---- */
-function begin(){if(st==='running')return;if(st==='over'||st==='idle')newGame();st='running';show('');clearTimeout(timer);draw();timer=setTimeout(step,delay())}
-function pause(){if(st==='running'){st='paused';clearTimeout(timer);show('PAUSA');$('bP').textContent='SEGUIR'}else if(st==='paused'){st='running';show('');$('bP').textContent='PAUSA';timer=setTimeout(step,delay())}}
+function setMenu(o){const r=$('row');r.classList.toggle('open',o);$('bM').textContent=o?'✕':'☰'}
+function begin(){if(st==='running')return;setMenu(false);if(st==='over'||st==='idle')newGame();st='running';show('');clearTimeout(timer);draw();timer=setTimeout(step,delay())}
+function pause(){if(st==='running'){st='paused';clearTimeout(timer);show('PAUSA');$('bP').textContent='SEGUIR'}else if(st==='paused'){st='running';setMenu(false);show('');$('bP').textContent='PAUSA';timer=setTimeout(step,delay())}}
 function input(d){if(st==='idle'||st==='over'){begin();return}if(st==='paused')return;turn(d)}
 document.querySelectorAll('#pad button').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();input(b.dataset.d)}));
 addEventListener('keydown',e=>{const m={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R'}[e.key];if(m){e.preventDefault();input(m)}else if(e.key===' '){e.preventDefault();st==='idle'||st==='over'?begin():pause()}});
-/* deslizar (swipe) sobre la pantalla */
-let t0=null;
-cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];t0=[t.clientX,t.clientY]},{passive:true});
-cv.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
-cv.addEventListener('touchend',e=>{if(!t0)return;const t=e.changedTouches[0],dx=t.clientX-t0[0],dy=t.clientY-t0[1];t0=null;
- if(Math.max(Math.abs(dx),Math.abs(dy))<24){st==='paused'?pause():begin();return}
- input(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'))});
+/* deslizar: responde mientras el dedo se mueve (umbral bajo), en cualquier parte del teléfono */
+const TH=8,ph=document.getElementById('ph');let a=null,moved=false;
+ph.addEventListener('touchstart',e=>{if(e.target.closest('button'))return;const t=e.touches[0];a=[t.clientX,t.clientY];moved=false},{passive:true});
+ph.addEventListener('touchmove',e=>{if(!a)return;e.preventDefault();const t=e.touches[0],dx=t.clientX-a[0],dy=t.clientY-a[1];if(Math.max(Math.abs(dx),Math.abs(dy))<TH)return;input(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'));moved=true;a=[t.clientX,t.clientY]},{passive:false});
+ph.addEventListener('touchend',e=>{if(a&&!moved&&e.target.closest('#cv')&&!e.target.closest('#row')){st==='paused'?pause():begin()}a=null});
 cv.addEventListener('mousedown',()=>{if(st==='idle'||st==='over')begin();else if(st==='paused')pause()});
 $('bP').onclick=pause;
+$('bM').onclick=()=>{const o=!$('row').classList.contains('open');if(o&&st==='running')pause();setMenu(o)};
+addEventListener('keydown',e=>{if(e.key==='m'||e.key==='M')$('bM').click()});
 $('bW').onclick=()=>{if(st==='running')return;wrap=!wrap;$('bW').textContent='PAREDES: '+(wrap?'TRASPASABLES':'MORTALES')};
 $('bS').onclick=()=>{snd=!snd;$('bS').textContent='SONIDO: '+(snd?'ON':'OFF')};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='running')pause()});
 snake=[[9,9],[8,9],[7,9],[6,9]];dir='R';draw();
-try{if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js')}catch(e){}
+try{if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 </script></body></html>
