@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La Culebrita</title>
+<meta name="theme-color" content="#2b3a67">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{color-scheme:dark;--lcd:#9bbc0f;--ink:#0f380f;--body:#2b3a67;--body2:#1a2344;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#0c0f1f;font-family:"Trebuchet MS",Verdana,sans-serif;color:#dfe6ff;overscroll-behavior:none}
+body{display:flex;justify-content:center;align-items:center}
+#ph{width:min(94vw,440px);background:linear-gradient(160deg,var(--body),var(--body2));border-radius:34px;padding:16px 16px 18px;box-shadow:0 18px 50px rgba(0,0,0,.7),inset 0 2px 3px rgba(255,255,255,.2)}
+.brand{text-align:center;letter-spacing:6px;font-size:12px;color:#aab6e8;margin-bottom:8px;font-weight:bold}
+#lcdw{background:#6d8a10;padding:10px;border-radius:14px;box-shadow:inset 0 0 12px rgba(0,0,0,.6)}
+#hud{display:flex;justify-content:space-between;font:bold 15px monospace;color:var(--ink);padding:0 4px 4px}
+canvas{display:block;width:100%;aspect-ratio:1;background:var(--lcd);image-rendering:pixelated;touch-action:none;border:2px solid var(--ink)}
+#ov{position:absolute;inset:0}
+#cv{position:relative}
+#msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font:bold 20px monospace;color:var(--ink);text-align:center;pointer-events:none;white-space:pre-line;text-shadow:0 0 0 var(--ink)}
+#pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px auto 0;width:min(70%,230px)}
+#pad button{aspect-ratio:1;border:0;border-radius:50%;background:linear-gradient(180deg,#46508a,#2a3265);color:#fff;font-size:24px;box-shadow:0 4px 0 #151a3a;touch-action:manipulation}
+#pad button:active{transform:translateY(3px);box-shadow:0 1px 0 #151a3a}
+#pad .e{visibility:hidden}
+#row{display:flex;gap:8px;margin-top:12px}
+#row button{flex:1;padding:10px 4px;border:0;border-radius:12px;background:rgba(255,255,255,.12);color:#dfe6ff;font:bold 12px "Trebuchet MS",sans-serif;touch-action:manipulation}
+</style></head><body>
+<div id="ph">
+<div class="brand">LA&nbsp;CULEBRITA</div>
+<div id="lcdw"><div id="hud"><span>PTS <b id="sc">0</b></span><span>NIVEL <b id="lv">1</b></span><span>REC <b id="hi">0</b></span></div>
+<div id="cv"><canvas id="c" width="360" height="360"></canvas><div id="msg">LA CULEBRITA
+Toca para jugar</div></div></div>
+<div id="pad"><span class="e"></span><button data-d="U">▲</button><span class="e"></span><button data-d="L">◀</button><button data-d="D">▼</button><button data-d="R">▶</button></div>
+<div id="row"><button id="bP">PAUSA</button><button id="bW">PAREDES: MORTALES</button><button id="bS">SONIDO: ON</button></div>
+</div>
+<script>
+"use strict";
+const N=18,CS=20,cv=document.getElementById('c'),g=cv.getContext('2d'),$=id=>document.getElementById(id);
+const LCD='#9bbc0f',INK='#0f380f';
+const DIRS={U:[0,-1],D:[0,1],L:[-1,0],R:[1,0]};
+let st='idle',snake,dir,queue,food,score,timer,wrap=false,snd=true,blink=0,hi=0;
+try{hi=+localStorage.getItem('culebrita_hi')||0}catch(e){}
+$('hi').textContent=hi;
+/* ---- audio ---- */
+let AC;function beep(f,d=.06,t='square',v=.05){if(!snd)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),a=AC.createGain();o.type=t;o.frequency.value=f;a.gain.value=v;o.connect(a);a.connect(AC.destination);o.start();a.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+/* ---- lógica (pura, separada del dibujo) ---- */
+function newGame(){snake=[[9,9],[8,9],[7,9],[6,9]];dir='R';queue=[];score=0;placeFood();upd()}
+function placeFood(){const free=[];for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!snake.some(s=>s[0]===x&&s[1]===y))free.push([x,y]);food=free.length?free[Math.floor(Math.random()*free.length)]:null}
+function level(){return 1+Math.floor(score/5)}
+function delay(){return Math.max(55,160-(level()-1)*12)}
+function turn(d){const last=queue.length?queue[queue.length-1]:dir;const a=DIRS[d],b=DIRS[last];if(a[0]+b[0]===0&&a[1]+b[1]===0)return;if(d===last)return;if(queue.length<2)queue.push(d)}
+function step(){
+ if(queue.length)dir=queue.shift();
+ const [dx,dy]=DIRS[dir];let x=snake[0][0]+dx,y=snake[0][1]+dy;
+ if(wrap){x=(x+N)%N;y=(y+N)%N}else if(x<0||y<0||x>=N||y>=N)return die();
+ const eat=food&&x===food[0]&&y===food[1];
+ const body=eat?snake:snake.slice(0,-1);
+ if(body.some(s=>s[0]===x&&s[1]===y))return die();
+ snake.unshift([x,y]);if(!eat)snake.pop();
+ if(eat){score++;beep(880,.07);placeFood();if(!food){win();return}upd()}else beep(160,.015,'square',.015);
+ draw();timer=setTimeout(step,delay())}
+function die(){st='over';clearTimeout(timer);beep(120,.35,'sawtooth',.08);if(score>hi){hi=score;try{localStorage.setItem('culebrita_hi',hi)}catch(e){}}upd();draw();show('FIN DEL JUEGO\nPTS: '+score+'\nToca para reiniciar');if(navigator.vibrate)navigator.vibrate(150)}
+function win(){st='over';show('¡GANASTE!\nToca para reiniciar')}
+function upd(){$('sc').textContent=score;$('lv').textContent=level();$('hi').textContent=hi}
+function show(t){$('msg').textContent=t}
+/* ---- dibujo ---- */
+function cell(x,y,fill=INK){g.fillStyle=fill;g.fillRect(x*CS+1,y*CS+1,CS-2,CS-2)}
+function draw(){g.fillStyle=LCD;g.fillRect(0,0,360,360);
+ if(snake)snake.forEach((s,i)=>{cell(s[0],s[1]);if(i===0){g.fillStyle=LCD;const e=dir==='L'||dir==='R'?[[0,-4],[0,4]]:[[-4,0],[4,0]];e.forEach(o=>g.fillRect(s[0]*CS+9+o[0],s[1]*CS+9+o[1],3,3))}});
+ if(food){blink^=1;g.fillStyle=INK;const fx=food[0]*CS,fy=food[1]*CS;g.fillRect(fx+7,fy+2,6,16);g.fillRect(fx+2,fy+7,16,6);if(blink){g.fillStyle=LCD;g.fillRect(fx+9,fy+9,2,2)}}}
+/* ---- control de estados ---- */
+function begin(){if(st==='running')return;if(st==='over'||st==='idle')newGame();st='running';show('');clearTimeout(timer);draw();timer=setTimeout(step,delay())}
+function pause(){if(st==='running'){st='paused';clearTimeout(timer);show('PAUSA');$('bP').textContent='SEGUIR'}else if(st==='paused'){st='running';show('');$('bP').textContent='PAUSA';timer=setTimeout(step,delay())}}
+function input(d){if(st==='idle'||st==='over'){begin();return}if(st==='paused')return;turn(d)}
+document.querySelectorAll('#pad button').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();input(b.dataset.d)}));
+addEventListener('keydown',e=>{const m={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R'}[e.key];if(m){e.preventDefault();input(m)}else if(e.key===' '){e.preventDefault();st==='idle'||st==='over'?begin():pause()}});
+/* deslizar (swipe) sobre la pantalla */
+let t0=null;
+cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];t0=[t.clientX,t.clientY]},{passive:true});
+cv.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+cv.addEventListener('touchend',e=>{if(!t0)return;const t=e.changedTouches[0],dx=t.clientX-t0[0],dy=t.clientY-t0[1];t0=null;
+ if(Math.max(Math.abs(dx),Math.abs(dy))<24){st==='paused'?pause():begin();return}
+ input(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'))});
+cv.addEventListener('mousedown',()=>{if(st==='idle'||st==='over')begin();else if(st==='paused')pause()});
+$('bP').onclick=pause;
+$('bW').onclick=()=>{if(st==='running')return;wrap=!wrap;$('bW').textContent='PAREDES: '+(wrap?'TRASPASABLES':'MORTALES')};
+$('bS').onclick=()=>{snd=!snd;$('bS').textContent='SONIDO: '+(snd?'ON':'OFF')};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='running')pause()});
+snake=[[9,9],[8,9],[7,9],[6,9]];dir='R';draw();
+try{if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js')}catch(e){}
+</script></body></html>
