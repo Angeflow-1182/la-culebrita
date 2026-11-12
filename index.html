@@ -11,15 +11,15 @@
 <meta name="apple-mobile-web-app-title" content="La Culebrita">
 <meta name="application-name" content="La Culebrita">
 <meta name="description" content="¡Juega La Culebrita gratis! El clásico juego de la serpiente, con desafíos, niveles y mucha diversión. Disponible para celular y computador.">
-<link rel="canonical" href="https://angelo300110-dev.github.io/la-culebrita/">
+<link rel="canonical" href="https://angeflow-1182.github.io/la-culebrita/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="La Culebrita">
 <meta property="og:locale" content="es_LA">
 <meta property="og:title" content="La Culebrita">
 <meta property="og:description" content="¡Juega La Culebrita gratis! El clásico juego de la serpiente, con desafíos, niveles y mucha diversión. Disponible para celular y computador.">
-<meta property="og:url" content="https://angelo300110-dev.github.io/la-culebrita/">
-<meta property="og:image" content="https://angelo300110-dev.github.io/la-culebrita/preview.png">
-<meta property="og:image:secure_url" content="https://angelo300110-dev.github.io/la-culebrita/preview.png">
+<meta property="og:url" content="https://angeflow-1182.github.io/la-culebrita/">
+<meta property="og:image" content="https://angeflow-1182.github.io/la-culebrita/preview.png">
+<meta property="og:image:secure_url" content="https://angeflow-1182.github.io/la-culebrita/preview.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -27,7 +27,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="La Culebrita">
 <meta name="twitter:description" content="¡Juega La Culebrita gratis! El clásico juego de la serpiente, con desafíos, niveles y mucha diversión. Disponible para celular y computador.">
-<meta name="twitter:image" content="https://angelo300110-dev.github.io/la-culebrita/preview.png">
+<meta name="twitter:image" content="https://angeflow-1182.github.io/la-culebrita/preview.png">
 <meta name="twitter:image:alt" content="La Culebrita: el clásico juego de la serpiente en una pantalla verde retro.">
 <style>
 :root{color-scheme:dark;--lcd:#9bbc0f;--ink:#0f380f;--body:#2b3a67;--body2:#1a2344;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -58,11 +58,12 @@ canvas{display:block;width:100%;aspect-ratio:1;background:var(--lcd);image-rende
 <div class="brand">LA&nbsp;CULEBRITA<button id="bM" aria-label="Menú">☰</button></div>
 <div id="lcdw"><div id="hud"><span>PTS <b id="sc">0</b></span><span>NIVEL <b id="lv">1</b></span><span>REC <b id="hi">0</b></span></div>
 <div id="cv"><canvas id="c" width="360" height="360"></canvas><div id="msg">LA CULEBRITA
-Toca para jugar</div><div id="row"><button id="bP">PAUSA</button><button id="bW">PAREDES: MORTALES</button><button id="bS">SONIDO: ON</button></div></div></div>
+Toca para jugar</div><div id="row"><button id="bP">PAUSA</button><button id="bW">PAREDES: MORTALES</button><button id="bS">SONIDO: ON</button><button id="bK">🏆 RANKING</button><button id="bU">JUGADOR</button></div></div></div>
 <div id="pad"><span class="e"></span><button data-d="U">▲</button><span class="e"></span><button data-d="L">◀</button><span class="e"></span><button data-d="R">▶</button><span class="e"></span><button data-d="D">▼</button><span class="e"></span></div>
 </div>
 <script>
 "use strict";
+var __g={s:0,ms:0,l:0};
 const N=18,CS=20,cv=document.getElementById('c'),g=cv.getContext('2d'),$=id=>document.getElementById(id);
 const LCD='#9bbc0f',INK='#0f380f';
 const DIRS={U:[0,-1],D:[0,1],L:[-1,0],R:[1,0]};
@@ -72,12 +73,12 @@ $('hi').textContent=hi;
 /* ---- audio ---- */
 let AC;function beep(f,d=.06,t='square',v=.05){if(!snd)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),a=AC.createGain();o.type=t;o.frequency.value=f;a.gain.value=v;o.connect(a);a.connect(AC.destination);o.start();a.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
 /* ---- lógica (pura, separada del dibujo) ---- */
-function newGame(){snake=[[9,9],[8,9],[7,9],[6,9]];dir='R';queue=[];score=0;placeFood();upd()}
+function newGame(){snake=[[9,9],[8,9],[7,9],[6,9]];dir='R';queue=[];score=0;__g={s:0,ms:0,l:0};placeFood();upd()}
 function placeFood(){const free=[];for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!snake.some(s=>s[0]===x&&s[1]===y))free.push([x,y]);food=free.length?free[Math.floor(Math.random()*free.length)]:null}
 function level(){return 1+Math.floor(score/5)}
 function delay(){return Math.max(55,160-(level()-1)*12)}
 function turn(d){const last=queue.length?queue[queue.length-1]:dir;const a=DIRS[d],b=DIRS[last];if(a[0]+b[0]===0&&a[1]+b[1]===0)return;if(d===last)return;if(queue.length<3)queue.push(d)}
-function step(){
+function step(){{const n=performance.now();if(__g.l)__g.ms+=Math.min(n-__g.l,2000);__g.l=n;__g.s++}
  if(queue.length)dir=queue.shift();
  const [dx,dy]=DIRS[dir];let x=snake[0][0]+dx,y=snake[0][1]+dy;
  if(wrap){x=(x+N)%N;y=(y+N)%N}else if(x<0||y<0||x>=N||y>=N)return die();
@@ -87,7 +88,7 @@ function step(){
  snake.unshift([x,y]);if(!eat)snake.pop();
  if(eat){score++;beep(880,.07);placeFood();if(!food){win();return}upd()}else beep(160,.015,'square',.015);
  draw();timer=setTimeout(step,delay())}
-function die(){st='over';clearTimeout(timer);beep(120,.35,'sawtooth',.08);if(score>hi){hi=score;try{localStorage.setItem('culebrita_hi',hi)}catch(e){}}upd();draw();show('FIN DEL JUEGO\nPTS: '+score+'\nToca para reiniciar');if(navigator.vibrate)navigator.vibrate(150)}
+function die(){st='over';clearTimeout(timer);beep(120,.35,'sawtooth',.08);if(score>hi){hi=score;try{localStorage.setItem('culebrita_hi',hi)}catch(e){}}upd();draw();show('FIN DEL JUEGO\nPTS: '+score+'\nToca para reiniciar');if(navigator.vibrate)navigator.vibrate(150);try{window.Family&&Family.gameOver({score:score,level:level(),steps:__g.s,ms:Math.round(__g.ms)})}catch(e){}}
 function win(){st='over';show('¡GANASTE!\nToca para reiniciar')}
 function upd(){$('sc').textContent=score;$('lv').textContent=level();$('hi').textContent=hi}
 function show(t){$('msg').textContent=t}
@@ -117,4 +118,8 @@ $('bS').onclick=()=>{snd=!snd;$('bS').textContent='SONIDO: '+(snd?'ON':'OFF')};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='running')pause()});
 snake=[[9,9],[8,9],[7,9],[6,9]];dir='R';draw();
 try{if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{})}catch(e){}
-</script></body></html>
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+<script src="config.js"></script>
+<script src="family.js"></script>
+</body></html>
