@@ -6,8 +6,29 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="La Culebrita">
+<meta name="application-name" content="La Culebrita">
+<meta name="description" content="¡Juega La Culebrita gratis! El clásico juego de la serpiente, con desafíos, niveles y mucha diversión. Disponible para celular y computador.">
+<link rel="canonical" href="https://angelo300110-dev.github.io/la-culebrita/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="La Culebrita">
+<meta property="og:locale" content="es_LA">
+<meta property="og:title" content="La Culebrita">
+<meta property="og:description" content="¡Juega La Culebrita gratis! El clásico juego de la serpiente, con desafíos, niveles y mucha diversión. Disponible para celular y computador.">
+<meta property="og:url" content="https://angelo300110-dev.github.io/la-culebrita/">
+<meta property="og:image" content="https://angelo300110-dev.github.io/la-culebrita/preview.png">
+<meta property="og:image:secure_url" content="https://angelo300110-dev.github.io/la-culebrita/preview.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La Culebrita: el clásico juego de la serpiente en una pantalla verde retro.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="La Culebrita">
+<meta name="twitter:description" content="¡Juega La Culebrita gratis! El clásico juego de la serpiente, con desafíos, niveles y mucha diversión. Disponible para celular y computador.">
+<meta name="twitter:image" content="https://angelo300110-dev.github.io/la-culebrita/preview.png">
+<meta name="twitter:image:alt" content="La Culebrita: el clásico juego de la serpiente en una pantalla verde retro.">
 <style>
 :root{color-scheme:dark;--lcd:#9bbc0f;--ink:#0f380f;--body:#2b3a67;--body2:#1a2344;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -95,5 +116,5 @@ $('bW').onclick=()=>{if(st==='running')return;wrap=!wrap;$('bW').textContent='PA
 $('bS').onclick=()=>{snd=!snd;$('bS').textContent='SONIDO: '+(snd?'ON':'OFF')};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&st==='running')pause()});
 snake=[[9,9],[8,9],[7,9],[6,9]];dir='R';draw();
-try{if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+try{if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{})}catch(e){}
 </script></body></html>
