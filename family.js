@@ -13,7 +13,7 @@ const css=document.createElement('style');css.textContent=`
 #fam.on{display:flex}
 .fb{width:100%;max-width:440px;max-height:94vh;overflow:auto;background:linear-gradient(160deg,#2b3a67,#1a2344);border:1px solid rgba(255,255,255,.25);border-radius:24px;padding:16px;text-align:center;box-shadow:0 0 50px rgba(120,60,255,.5)}
 .fb h2{margin:0 0 10px;color:#9be628;letter-spacing:2px;font-size:20px}
-.pl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:min(55vh,460px);overflow-y:auto;overscroll-behavior:contain;padding:2px;align-content:start}
 .pc{border:2px solid var(--c);border-radius:16px;background:rgba(0,0,0,.25);color:#fff;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:inherit;font-size:14px}
 .pc i{font-style:normal;font-size:34px}
 .go2,.ln2{width:100%;margin-top:8px;padding:12px;border:0;border-radius:999px;font-family:inherit;font-weight:bold;font-size:15px}
@@ -57,10 +57,21 @@ async function showLogin(){view='login';pauseGame();
  if(!pp.length)pp=[1,2,3,4].map(s=>({slot:s,display_name:'Jugador '+s,avatar:'🐍',color:'#46f09a'}));
  open('<h2>¿QUIÉN JUEGA?</h2><div class="pl">'+pp.map(p=>`<button class="pc" data-s="${p.slot}" style="--c:${esc(p.color)}"><i>${esc(p.avatar)}</i><b>${esc(p.display_name)}</b></button>`).join('')+'</div><button class="ln2" id="fG">Jugar sin ranking</button>');
  ov.querySelectorAll('.pc').forEach(b=>b.onclick=()=>askPass(+b.dataset.s,pp.find(p=>p.slot==b.dataset.s)));$('fG').onclick=close}
-function askPass(slot,p){const pl=(C.players||[]).find(x=>x.slot===slot);
+// Los cuatro correos existentes tienen prioridad. Para nuevos integrantes se usa
+// un patrón configurable, por lo que basta con crear sus cuentas/perfiles en Supabase.
+// El correo es solamente el identificador de acceso; la contraseña nunca se almacena aquí.
+function emailForSlot(slot){
+ if(!Number.isSafeInteger(slot)||slot<1||slot>1000)return null;
+ const existing=(C.players||[]).find(x=>Number(x.slot)===slot);
+ if(existing&&existing.email)return existing.email;
+ const pattern=C.playerEmailPattern||'';
+ return /^jugador\{slot\}@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(pattern)
+  ?pattern.replace('{slot}',String(slot)):null;
+}
+function askPass(slot,p){const email=emailForSlot(slot);
  open(`<h2>${esc(p.avatar)} ${esc(p.display_name)}</h2><input id="fPw" type="password" placeholder="Tu clave" autocomplete="current-password"><div id="fEr" class="er"></div><button id="fGo" class="go2">ENTRAR</button><button id="fBk" class="ln2">Volver</button>`);
- const go=async()=>{if(!pl||!pl.email){$('fEr').textContent='Falta el correo en config.js';return}
-  $('fGo').disabled=true;const{error}=await sb.auth.signInWithPassword({email:pl.email,password:$('fPw').value}).catch(e=>({error:e}));
+ const go=async()=>{if(!email){$('fEr').textContent='No está configurado el acceso de este jugador';return}
+  $('fGo').disabled=true;const{error}=await sb.auth.signInWithPassword({email,password:$('fPw').value}).catch(e=>({error:e}));
   if(error){$('fGo').disabled=false;$('fEr').textContent=net(error)?'Sin conexión. Reintenta con Internet.':'Clave incorrecta';return}
   await onLogin();close()};
  $('fGo').onclick=go;$('fPw').onkeydown=e=>{if(e.key==='Enter')go()};$('fBk').onclick=showLogin;$('fPw').focus()}
